@@ -8,7 +8,7 @@ const ObjectId = require('mongodb').ObjectId
 app.use(express.urlencoded({extended: true}))
 
 // Connection to mongodb
-const myurl = 'mongodb://localhost:27017/upload';
+const myurl = 'mongodb://localhost:27017';
 
 // Specify the storage type
 const storage = multer.diskStorage({
@@ -77,15 +77,20 @@ app.post('/uploadmultiple', upload.array('myFiles', 12), (req, res, next) => {
 app.post('/uploadphoto', upload.fields([{name:'profilePic',maxCount:1},{name:'UACE',maxCount:1}]), (req, res) => {
   const files = req.files
   console.log(files)
-  if(Object.keys(files).length === 0){
+  if(!files || Object.keys(files).length === 0){
     return res.send({error: "Please upload atleast one image"})
   }
-  const profilePic = files['profilePic'] ? fs.readFileSync(files['profilePic'][0].path): null
-  const UACE = files['UACE'] ? fs.readFileSync(files['UACE'][1].path): null
+
+  const profilePic = files['profilePic'][0]
+  const UACE = files['UACE'][0]
+
+  
+  const profilePic1 = files['profilePic'] ? fs.readFileSync(profilePic.path): null
+  const UACE1 = files['UACE'] ? fs.readFileSync(UACE.path): null
 
 
- const profilePicEncoded = profilePic ? profilePic.toString('base64'): null
- const UACEEncoded = UACE ? UACE.toString('base64'):null
+ const profilePicEncoded = profilePic ? profilePic1.toString('base64'): null
+ const UACEEncoded = UACE ? UACE1.toString('base64'):null
  
  const images =  [
    { 
@@ -124,8 +129,8 @@ var filename = req.params.id;
 
 db.collection('mycollection').findOne({'_id': ObjectId(filename) }, (err, result) => {
     if (err) return console.log(err)
-    const {image} = result;
-   res.contentType('image/jpeg');
+    const {image, contentType} = result;
+   res.contentType(contentType);
    res.send(image.buffer)
   })
 })
@@ -149,4 +154,14 @@ app.get('/photos/:id', (req, res) => {
     })
   })
   
+
+  /*
+  
+  taxRegistrationDoc: { type: String, trim: true },
+        // taxRegistrationDoc: { image: Buffer, contentType: String },
+
+        nationalIdDoc: { type: String, trim: true },
+        // nationalIdDoc: { image: Buffer, contentType: String },
+        nationalIdNumber: { type: Number, trim: true, unique: true, sparse: true },
+  */
 

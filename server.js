@@ -1,27 +1,29 @@
 const express = require('express')
-const bodyParser= require('body-parser')
 const app = express()
 const multer = require('multer');
-fs = require('fs-extra')
-app.use(bodyParser.urlencoded({extended: true}))
-
+const fs = require('fs-extra')
 const MongoClient = require('mongodb').MongoClient
-ObjectId = require('mongodb').ObjectId
+const ObjectId = require('mongodb').ObjectId
 
-const myurl = 'mongodb://localhost:27017';
+app.use(express.urlencoded({extended: true}))
 
+// Connection to mongodb
+const myurl = 'mongodb://localhost:27017/upload';
 
-var storage = multer.diskStorage({
+// Specify the storage type
+const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'uploads')
+    cb(null, 'public/uploads')
   },
   filename: function (req, file, cb) {
     cb(null, file.fieldname + '-' + Date.now())
   }
 })
 
-var upload = multer({ storage: storage })
+// Configure the multer middleware
+const upload = multer({ storage: storage })
 
+// Create a connection to the mongodb database
 MongoClient.connect(myurl, (err, client) => {
   if (err) return console.log(err)
   db = client.db('test') 
@@ -30,27 +32,33 @@ MongoClient.connect(myurl, (err, client) => {
   })
 })
 
+// Render the html form page
 app.get('/',function(req,res){
   res.sendFile(__dirname + '/index.html');
 
 });
 
-// upload single file
+/* 
+  upload single file 
+  ** This is image is not stored in the db
 
+*/
 app.post('/uploadfile', upload.single('myFile'), (req, res, next) => {
   const file = req.file
   if (!file) {
     const error = new Error('Please upload a file')
     error.httpStatusCode = 400
     return next(error)
-
   }
-
- 
-    res.send(file)
+  res.send(file)
  
 })
-//Uploading multiple files
+
+/* 
+  Uploading multiple files for a single field
+  ** This is image is not stored in the db
+
+*/
 app.post('/uploadmultiple', upload.array('myFiles', 12), (req, res, next) => {
   const files = req.files
   if (!files) {
@@ -58,30 +66,44 @@ app.post('/uploadmultiple', upload.array('myFiles', 12), (req, res, next) => {
     error.httpStatusCode = 400
     return next(error)
   }
-
-    res.send(files)
- 
+  res.send(files)
 })
 
+/* 
+  Uploading multiple images for multiple fields
+  ** These images are stored into the mongodb database
 
-app.post('/uploadphoto', upload.single('picture'), (req, res) => {
-	var img = fs.readFileSync(req.file.path);
- var encode_image = img.toString('base64');
- // Define a JSONobject for the image attributes for saving to database
+*/
+app.post('/uploadphoto', upload.fields([{name:'profilePic',maxCount:1},{name:'UACE',maxCount:1}]), (req, res) => {
+  const files = req.files
+  console.log(files)
+  if(Object.keys(files).length === 0){
+    return res.send({error: "Please upload atleast one image"})
+  }
+  const profilePic = files['profilePic'] ? fs.readFileSync(files['profilePic'][0].path): null
+  const UACE = files['UACE'] ? fs.readFileSync(files['UACE'][1].path): null
+
+
+ const profilePicEncoded = profilePic ? profilePic.toString('base64'): null
+ const UACEEncoded = UACE ? UACE.toString('base64'):null
  
- var finalImg = {
-      contentType: req.file.mimetype,
-      image:  new Buffer(encode_image, 'base64')
-   };
-db.collection('mycollection').insertOne(finalImg, (err, result) => {
-  	console.log(result)
+ const images =  [
+   { 
+    name: "profile",
+    contentType: profilePic ? profilePic.mimetype: null,
+    image:  profilePicEncoded ? new Buffer(profilePicEncoded, 'base64'): null
+  },
+  { 
+    name: "UACE",
+    contentType: UACE ? UACE.mimetype: null,
+    image:  UACEEncoded ? new Buffer(UACEEncoded, 'base64'): null
+  }
+ ]
 
+db.collection('mycollection').insertMany(images, (err, result) => {
     if (err) return console.log(err)
-
     console.log('saved to database')
     res.redirect('/')
-  
-    
   })
 })
 
@@ -94,9 +116,6 @@ db.collection('mycollection').find().toArray((err, result) => {
 
    if (err) return console.log(err)
    res.send(imgArray)
-
-  
-   
   })
 });
 
@@ -104,14 +123,30 @@ app.get('/photo/:id', (req, res) => {
 var filename = req.params.id;
 
 db.collection('mycollection').findOne({'_id': ObjectId(filename) }, (err, result) => {
-
     if (err) return console.log(err)
-
+    const {image} = result;
    res.contentType('image/jpeg');
-   res.send(result.image.buffer)
-  
-   
+   res.send(image.buffer)
   })
 })
 
+
+app.get('/photos/:id', (req, res) => {
+  var filename = req.params.id;
+  
+  db.collection('mycollection').findOne({'_id': ObjectId(filename) }, (err, result) => {
+  
+      if (err) return console.log(err)
+  
+      const {name, _id} = result;
+     res.send({
+      status: 200,
+      data: {
+        name: name,
+        image: `http://localhost:3000/photo/${_id}`,
+      }
+     })
+    })
+  })
+  
 

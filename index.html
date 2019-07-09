@@ -1,74 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Uploading with Multer</title>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Uploading with Multer</title>
 
-<style>
-    input[type=file], select {
-    width: 100%;
-    padding: 12px 20px;
-    margin: 8px 0;
-    display: inline-block;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box;
-}
+    <style>
+      input[type="file"],
+      select {
+        width: 100%;
+        padding: 12px 20px;
+        margin: 8px 0;
+        display: inline-block;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+      }
 
-button[type=submit] {
-    width: 100%;
-    background-color: #4CAF50;
-    color: white;
-    padding: 14px 20px;
-    margin: 8px 0;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
+      button[type="submit"] {
+        width: 100%;
+        background-color: #4caf50;
+        color: white;
+        padding: 14px 20px;
+        margin: 8px 0;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
 
+      div {
+        border-radius: 5px;
+        background-color: #f2f2f2;
+        padding: 20px;
+      }
+      .img {
+        height: 400px;
+        width: 400px;
+        border: 2px solid yellow;
+        border-radius: 50%;
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <!--  SINGLE FILE -->
+      <form action="/uploadfile" enctype="multipart/form-data" method="POST">
+        <input type="file" name="myFile" />
+        <input type="submit" value="Upload a file" />
+      </form>
 
-div {
-    border-radius: 5px;
-    background-color: #f2f2f2;
-    padding: 20px;
-}
-  </style>
-</head>
-<body>
+      <hr />
 
-<div>
+      <!-- MULTIPLE FILES -->
 
- <!--  SINGLE FILE -->
-<form action="/uploadfile" enctype="multipart/form-data" method="POST"> 
-   <input type="file" name="myFile" />
-   <input type="submit" value="Upload a file"/>
-</form>
+      <form
+        action="/uploadmultiple"
+        enctype="multipart/form-data"
+        method="POST"
+      >
+        Select multiple images: <input type="file" name="myFiles" multiple />
+        <input type="submit" value="Upload your photos" />
+      </form>
 
+      <hr />
 
+      <!--   PHOTO-->
+      <h1>Store in MongoDB</h1>
+      <form action="/uploadphoto" enctype="multipart/form-data" method="POST">
+        <input type="file" name="profilePic" accept="image/*" />
+        <input type="file" name="UACE" accept="image/*" />
+        <input type="submit" value="Upload an Image" />
+      </form>
 
-<hr>
-
-<!-- MULTIPLE FILES -->
-
-<form action="/uploadmultiple"  enctype="multipart/form-data" method="POST">
-  Select multiple images: <input type="file" name="myFiles" multiple>
-  <input type="submit" value="Upload your photos"/>
-</form>
-
-<hr>
-
-<!--   PHOTO-->
-
-<form action="/uploadphoto" enctype="multipart/form-data" method="POST"> 
-  <input type="file" name="picture" accept="image/*" />
-  <input type="submit" value="Upload an Image"/>
-</form>
-
-
-</div>
-
-</body>
+      <img
+        class="img"
+        src="http://localhost:3000/photo/5d243a47ec93152906b0ce60"
+      />
+    </div>
+  </body>
 </html>
-
-
-
